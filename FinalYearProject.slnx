@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="FinalYearProject.Data/FinalYearProject.Data.csproj" Id="f067dcdd-7d4f-4402-a1bf-0a170ba5e915" />
+  <Project Path="FinalYearProject.Services/FinalYearProject.Services.csproj" />
+  <Project Path="FinalYearProject/FinalYearProject.csproj" />
+</Solution>
