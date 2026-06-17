@@ -6,6 +6,6 @@ namespace FinalYearProject.Services.Encryption;
 
 public interface IEncryptionService
 {
-    (string payload, string aesKey) Encrypt(string message);
-    string Decrypt(string cipherJson);
+    string Encrypt(string plainText);
+    string Decrypt(string cipherText);
 }

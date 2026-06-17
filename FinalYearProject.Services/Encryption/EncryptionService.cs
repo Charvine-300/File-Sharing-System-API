@@ -1,4 +1,5 @@
-﻿using System.Security.Cryptography;
+﻿using FinalYearProject.Data.Domain.Config;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
@@ -8,40 +9,23 @@ public class EncryptionService : IEncryptionService
 {
     private readonly byte[] _key;
 
-    public EncryptionService()
+    public EncryptionService(FileSystemConfig config)
     {
-        // 256-bit key for AES
-        _key = new byte[32];
-
-        var keyPath = "Keys/aes.key";
-
-        Directory.CreateDirectory("Keys");
-
-        if (!File.Exists(keyPath))
-        {
-            RandomNumberGenerator.Fill(_key);
-            File.WriteAllBytes(keyPath, _key);
-        }
-        else
-        {
-            _key = File.ReadAllBytes(keyPath);
-        }
+        // Base64 AES key from appsettings
+        _key = Convert.FromBase64String(config.AESKey);
     }
 
-    public (string payload, string aesKey) Encrypt(string message)
+    public string Encrypt(string plainText)
     {
-        byte[] plaintext = Encoding.UTF8.GetBytes(message);
+        byte[] plaintextBytes = Encoding.UTF8.GetBytes(plainText);
 
-        byte[] nonce = new byte[12];
-        RandomNumberGenerator.Fill(nonce);
-
-        byte[] ciphertext = new byte[plaintext.Length];
+        byte[] nonce = RandomNumberGenerator.GetBytes(12);
+        byte[] ciphertext = new byte[plaintextBytes.Length];
         byte[] tag = new byte[16];
 
-        using (var aes = new AesGcm(_key))
-        {
-            aes.Encrypt(nonce, plaintext, ciphertext, tag);
-        }
+        using var aes = new AesGcm(_key);
+
+        aes.Encrypt(nonce, plaintextBytes, ciphertext, tag);
 
         var payload = new
         {
@@ -50,26 +34,23 @@ public class EncryptionService : IEncryptionService
             tag = Convert.ToBase64String(tag)
         };
 
-        return (
-            JsonSerializer.Serialize(payload),
-            Convert.ToBase64String(_key) // THIS is what Python needs
-        );
+        return JsonSerializer.Serialize(payload);
     }
 
     public string Decrypt(string cipherJson)
     {
-        var payload = JsonSerializer.Deserialize<dynamic>(cipherJson)!;
+        var payload = JsonSerializer.Deserialize<CipherPayload>(cipherJson)
+            ?? throw new Exception("Invalid cipher payload");
 
-        byte[] nonce = Convert.FromBase64String((string)payload.GetProperty("nonce").GetString());
-        byte[] cipher = Convert.FromBase64String((string)payload.GetProperty("cipher").GetString());
-        byte[] tag = Convert.FromBase64String((string)payload.GetProperty("tag").GetString());
+        byte[] nonce = Convert.FromBase64String(payload.Nonce);
+        byte[] cipher = Convert.FromBase64String(payload.Cipher);
+        byte[] tag = Convert.FromBase64String(payload.Tag);
 
         byte[] plaintext = new byte[cipher.Length];
 
-        using (var aes = new AesGcm(_key))
-        {
-            aes.Decrypt(nonce, cipher, tag, plaintext);
-        }
+        using var aes = new AesGcm(_key);
+
+        aes.Decrypt(nonce, cipher, tag, plaintext);
 
         return Encoding.UTF8.GetString(plaintext);
     }

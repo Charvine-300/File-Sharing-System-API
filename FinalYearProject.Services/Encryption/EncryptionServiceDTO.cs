@@ -10,3 +10,10 @@ public class EncryptRequest
 
     public string Policy { get; set; } = string.Empty;
 }
+
+public class CipherPayload
+{
+    public string Nonce { get; set; } = default!;
+    public string Cipher { get; set; } = default!;
+    public string Tag { get; set; } = default!;
+}

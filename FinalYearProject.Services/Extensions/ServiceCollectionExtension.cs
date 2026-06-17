@@ -1,5 +1,7 @@
 ﻿using FinalYearProject.Data.Context;
 using FinalYearProject.Data.Domain.Config;
+using FinalYearProject.Services.AttributeMgmt;
+using FinalYearProject.Services.Encryption;
 using FinalYearProject.Services.UserMgmt;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -24,7 +26,9 @@ public static class ServiceCollectionExtension
         services.AddHttpContextAccessor();
         services.AddHttpClient();
 
+        services.AddScoped<IEncryptionService, EncryptionService>();
         services.AddScoped<IUserMgmtService, UserMgmtService>();
+        services.AddScoped<IAttributeMgmtService, AttributeMgmtService>();
         services.AddScoped<IMemoryCache, MemoryCache>();
     }
 
