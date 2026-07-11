@@ -3,13 +3,14 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
+using static FinalYearProject.Data.Utilities.StartsWithAttribute;
 
 namespace FinalYearProject.Services.AttributeMgmt;
 
 public record AllAttributesResponse(
     Guid Id,
     string AttributeName,
-    AttributeType AttributeType
+    string AttributeType
 );
 
 public record AttributeDetailsResponse(
@@ -21,6 +22,7 @@ public record AttributeDetailsResponse(
 public class AttributeMgmtRequest
 {
     [Required]
+    [ValidAttributeName]
     public string AttributeName { get; set; }
 
     [Required]

@@ -2,6 +2,9 @@
 using FinalYearProject.Data.Domain.Config;
 using FinalYearProject.Services.AttributeMgmt;
 using FinalYearProject.Services.Encryption;
+using FinalYearProject.Services.PolicyMgmt;
+using FinalYearProject.Services.Shared.UserContextService;
+using FinalYearProject.Services.UploadsMgmt;
 using FinalYearProject.Services.UserMgmt;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -29,6 +32,9 @@ public static class ServiceCollectionExtension
         services.AddScoped<IEncryptionService, EncryptionService>();
         services.AddScoped<IUserMgmtService, UserMgmtService>();
         services.AddScoped<IAttributeMgmtService, AttributeMgmtService>();
+        services.AddScoped<IUploadsMgmtService, UploadsMgmtService>();
+        services.AddScoped<IPolicyMgmtService, PolicyMgmtService>();
+        services.AddScoped<IUserContextService, UserContextService>();
         services.AddScoped<IMemoryCache, MemoryCache>();
     }
 

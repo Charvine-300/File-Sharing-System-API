@@ -43,12 +43,54 @@ public class UsersController(IUserMgmtService userService) : BaseController
     }
 
     /// <summary>
+    /// Update user's basic information
+    /// </summary>
+    [HttpPut("update/{id}")]
+    public async Task<IActionResult> UpdateUser(
+        Guid id,
+        [FromBody] UpdateUserRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var response = await userService.UpdateUserAsync(
+            id,
+            request,
+            cancellationToken);
+
+        return ComputeResponse(response);
+    }
+
+    /// <summary>
+    /// Update user's attributes
+    /// Reserved for Super Admins
+    /// </summary>
+    [HttpPut("{id}/attributes")]
+    //[Authorize(Roles = "SuperAdmin")]
+    public async Task<IActionResult> UpdateUserAttributes(
+        Guid id,
+        [FromBody] UpdateUserAttributesRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var response = await userService.UpdateUserAttributesAsync(
+            id,
+            request,
+            cancellationToken);
+
+        return ComputeResponse(response);
+    }
+
+    /// <summary>
     /// Delete a user by their unique identifier
     /// </summary>
     /// <param name="parameters"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    [HttpDelete("{id}")]
+    [HttpDelete("delete/{id}")]
     public async Task<IActionResult> DeleteUser(
         Guid id,
         CancellationToken cancellationToken)

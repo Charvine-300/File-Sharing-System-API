@@ -8,4 +8,6 @@ public interface IEncryptionService
 {
     string Encrypt(string plainText);
     string Decrypt(string cipherText);
+    EncryptedFile EncryptFile(byte[] fileBytes, byte[] aesKey);
+    byte[] DecryptFile(EncryptedFile encryptedFile, byte[] aesKey);
 }

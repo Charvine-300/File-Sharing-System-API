@@ -54,4 +54,48 @@ public class EncryptionService : IEncryptionService
 
         return Encoding.UTF8.GetString(plaintext);
     }
+
+    public EncryptedFile EncryptFile(byte[] fileBytes, byte[] aesKey)
+    {
+        byte[] nonce = RandomNumberGenerator.GetBytes(12);
+        byte[] tag = new byte[16];
+        byte[] cipher = new byte[fileBytes.Length];
+
+        using var aes = new AesGcm(aesKey);
+
+        aes.Encrypt(
+            nonce,
+            fileBytes,
+            cipher,
+            tag);
+
+        return new EncryptedFile
+        {
+            Cipher = cipher,
+            Nonce = nonce,
+            Tag = tag
+        };
+    }
+
+    public byte[] DecryptFile(
+    EncryptedFile encrypted,
+    byte[] aesKey)
+    {
+        byte[] plaintext = new byte[encrypted.Cipher.Length];
+
+        using var aes = new AesGcm(aesKey);
+
+        aes.Decrypt(
+            encrypted.Nonce,
+            encrypted.Cipher,
+            encrypted.Tag,
+            plaintext);
+
+        return plaintext;
+    }
+
+    private byte[] GenerateFileKey()
+    {
+        return RandomNumberGenerator.GetBytes(32);
+    }
 }

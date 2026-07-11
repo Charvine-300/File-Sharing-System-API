@@ -1,5 +1,4 @@
 ﻿using FinalYearProject.Data.Context;
-using FinalYearProject.Data.Domain.Entities.Attributes;
 using FinalYearProject.Data.Utilities;
 using FinalYearProject.Services.Shared;
 using Microsoft.EntityFrameworkCore;
@@ -35,12 +34,13 @@ public class AttributeMgmtService(
         var attributes = await query
             .Skip((parameters.PageNumber - 1) * parameters.PageSize)
             .Take(parameters.PageSize)
+            .OrderBy(a => a.CreatedAt)
             .ToListAsync(cancellationToken);
 
         var data = attributes.Select(a => new AllAttributesResponse(
             a.Id,
             a.AttributeName,
-            a.AttributeType
+            a.AttributeType.ToString()
         )).ToList();
 
         return Response.Success(

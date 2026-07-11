@@ -37,4 +37,10 @@ public enum AttributeType
     Department,
     ClearanceLevel,
     Other
-}   
+}
+
+public enum PolicyOperator
+{
+    And,
+    Or
+}
