@@ -39,8 +39,7 @@ public record AllUsersResponse(
     string FirstName,
     string LastName,
     string Email,
-    bool IsActive,
-    List<string> Attributes
+    bool IsActive
 );
 
 public class UserParameters : RequestParameters

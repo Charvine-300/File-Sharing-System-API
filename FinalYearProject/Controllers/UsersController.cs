@@ -1,4 +1,5 @@
 ﻿using FinalYearProject.Controllers.Shared;
+using FinalYearProject.Services.Shared.Validators.Attributes;
 using FinalYearProject.Services.UserMgmt;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -7,9 +8,26 @@ namespace FinalYearProject.Controllers;
 
 [ApiController]
 [Route("api/users")]
+[Authorize]
 //[Authorize]
 public class UsersController(IUserMgmtService userService) : BaseController
 {
+    /// <summary>
+    /// Get all users
+    /// </summary>
+    /// <param name="parameters"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    [HttpGet]
+    [SuperAdmin]
+    public async Task<IActionResult> GetUsers(
+        [FromQuery] UserParameters parameters,
+        CancellationToken cancellationToken)
+    {
+        var response = await userService.GetUsersAsync(parameters, cancellationToken);
+        return ComputeResponse(response);
+    }
+
     /// <summary>
     /// Get details of a particular user
     /// </summary>
@@ -17,6 +35,7 @@ public class UsersController(IUserMgmtService userService) : BaseController
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     [HttpGet("{id}")]
+    [SuperAdmin]
     public async Task<IActionResult> GetUser(
         Guid id,
         CancellationToken cancellationToken)
@@ -32,6 +51,7 @@ public class UsersController(IUserMgmtService userService) : BaseController
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     [HttpPost("create")]
+    [SuperAdmin]
     public async Task<IActionResult> CreateUser(
         [FromBody] CreateUserRequest request,
         CancellationToken cancellationToken)
@@ -67,7 +87,7 @@ public class UsersController(IUserMgmtService userService) : BaseController
     /// Reserved for Super Admins
     /// </summary>
     [HttpPut("{id}/attributes")]
-    //[Authorize(Roles = "SuperAdmin")]
+    [SuperAdmin]
     public async Task<IActionResult> UpdateUserAttributes(
         Guid id,
         [FromBody] UpdateUserAttributesRequest request,
@@ -91,6 +111,7 @@ public class UsersController(IUserMgmtService userService) : BaseController
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     [HttpDelete("delete/{id}")]
+    [SuperAdmin]
     public async Task<IActionResult> DeleteUser(
         Guid id,
         CancellationToken cancellationToken)

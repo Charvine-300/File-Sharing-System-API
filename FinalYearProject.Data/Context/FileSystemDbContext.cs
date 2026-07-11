@@ -16,6 +16,7 @@ public class FileSystemDbContext(DbContextOptions<FileSystemDbContext> options, 
     public DbSet<AuditLog> AuditLogs { get; set; }
     public DbSet<Attribute> Attributes { get; set; }
     public DbSet<UserAttribute> Users_Attributes { get; set; }
+    public DbSet<RefreshToken> RefreshTokens { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

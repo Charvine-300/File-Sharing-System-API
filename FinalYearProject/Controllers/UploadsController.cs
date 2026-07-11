@@ -1,11 +1,13 @@
 ﻿using FinalYearProject.Controllers.Shared;
 using FinalYearProject.Services.UploadsMgmt;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FinalYearProject.Controllers;
 
 [ApiController]
 [Route("api/uploads")]
+[Authorize]
 
 public class UploadsController(IUploadsMgmtService uploadsMgmtService) : BaseController
 {

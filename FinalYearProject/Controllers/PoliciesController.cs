@@ -1,11 +1,13 @@
 ﻿using FinalYearProject.Controllers.Shared;
 using FinalYearProject.Services.PolicyMgmt;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FinalYearProject.Controllers;
 
 [ApiController]
 [Route("api/policies")]
+[Authorize]
 //[Authorize]
 public class PoliciesController(IPolicyMgmtService policyService) : BaseController
 {

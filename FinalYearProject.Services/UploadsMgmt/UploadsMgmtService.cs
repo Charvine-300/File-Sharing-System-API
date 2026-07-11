@@ -1,13 +1,12 @@
 ﻿using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
-using Elastic.CommonSchema;
 using FinalYearProject.Data.Context;
 using FinalYearProject.Data.Domain.Config;
 using FinalYearProject.Data.Domain.Entities;
 using FinalYearProject.Data.Utilities;
-using FinalYearProject.Services.AttributeMgmt;
 using FinalYearProject.Services.Encryption;
 using FinalYearProject.Services.Shared;
+using FinalYearProject.Services.Shared.UserContextService;
 using Microsoft.EntityFrameworkCore;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
@@ -20,8 +19,8 @@ public class UploadsMgmtService(
     FileSystemDbContext database,
     FileSystemConfig config,
     IEncryptionService encryptionService,
-    IHttpClientFactory httpClientFactory
-    //IUserContextService userContextService
+    IHttpClientFactory httpClientFactory,
+    IUserContextService userContextService
 ) : IUploadsMgmtService
 {
     private readonly HttpClient _client = httpClientFactory.CreateClient();
@@ -215,9 +214,7 @@ public class UploadsMgmtService(
 
         Upload upload = new()
         {
-            UserId = Guid.Parse(
-                "019F523B-5096-7E4B-94B4-422AE4631490"
-            ),
+            UserId = userContextService.User.Id,
 
             Filename = request.File.FileName,
 
@@ -234,6 +231,7 @@ public class UploadsMgmtService(
             PolicyId = request.PolicyId,
 
             CreatedAt = DateTimeOffset.UtcNow,
+            CreatedBy = userContextService.User.FirstName,
 
             FileNonce = Convert.ToBase64String(encryptedFile.Nonce),
 
@@ -299,10 +297,6 @@ public class UploadsMgmtService(
 
         string aesKey =
             keyResponse.Aes_Key;
-
-        Console.WriteLine(await response.Content.ReadAsStringAsync());
-
-        Console.WriteLine($"Aes_Key = '{keyResponse?.Aes_Key}'");
 
         var encryptedBytes =
             await _client.GetByteArrayAsync(

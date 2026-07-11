@@ -15,4 +15,5 @@ public class User: BaseEntity
     public string PrivateKey { get; set; }
     public virtual ICollection<Upload> Uploads { get; set; } = new List<Upload>();
     public virtual ICollection<UserAttribute> UsersAttributes { get; set; } = new List<UserAttribute>();
+    public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 }

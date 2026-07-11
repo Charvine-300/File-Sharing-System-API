@@ -1,5 +1,6 @@
 ﻿using FinalYearProject.Controllers.Shared;
 using FinalYearProject.Services.AttributeMgmt;
+using FinalYearProject.Services.Shared.Validators.Attributes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,7 +8,7 @@ namespace FinalYearProject.Controllers;
 
 [ApiController]
 [Route("api/attributes")]
-//[Authorize]
+[Authorize]
 public class AttributesController(IAttributeMgmtService attributeService) : BaseController
 {
     /// <summary>
@@ -17,6 +18,7 @@ public class AttributesController(IAttributeMgmtService attributeService) : Base
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     [HttpGet]
+    [SuperAdmin]
     public async Task<IActionResult> GetAttributes(
         [FromQuery] AttributeParameters parameters,
         CancellationToken cancellationToken)
@@ -33,6 +35,7 @@ public class AttributesController(IAttributeMgmtService attributeService) : Base
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     [HttpGet("{id}")]
+    [SuperAdmin]
     public async Task<IActionResult> GetAttributeDetails(
         Guid id,
         CancellationToken cancellationToken)
@@ -49,6 +52,7 @@ public class AttributesController(IAttributeMgmtService attributeService) : Base
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     [HttpPost("create")]
+    [SuperAdmin]
     public async Task<IActionResult> CreateAttribute(
         [FromBody] AttributeMgmtRequest request,
         CancellationToken cancellationToken)
@@ -67,6 +71,7 @@ public class AttributesController(IAttributeMgmtService attributeService) : Base
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     [HttpPut("update/{id}")]
+    [SuperAdmin]
     public async Task<IActionResult> UpdateAttribute(
         Guid id,
         [FromBody] AttributeMgmtRequest request,
@@ -85,6 +90,7 @@ public class AttributesController(IAttributeMgmtService attributeService) : Base
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     [HttpDelete("delete/{id}")]
+    [SuperAdmin]
     public async Task<IActionResult> DeleteAttribute(
         Guid id,
         CancellationToken cancellationToken)
