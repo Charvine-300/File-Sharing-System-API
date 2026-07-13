@@ -54,6 +54,13 @@ public class AuthService(FileSystemDbContext database, FileSystemConfig config, 
                     null!);
             }
 
+            if (!user.IsActive)
+            {
+                return Response.Forbidden<LoginResponse>(
+                    "Your account is not active. Please contact support.",
+                    null!);
+            }
+
             LoginResponse result = await CreateAccessTokenAsync(
                 user,
                 true,

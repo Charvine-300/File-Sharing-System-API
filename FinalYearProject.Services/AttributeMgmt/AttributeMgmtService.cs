@@ -109,9 +109,9 @@ public class AttributeMgmtService(
     }
 
     public async Task<ServiceResponse> UpdateAttributeAsync(
-        Guid id,
-        AttributeMgmtRequest request,
-        CancellationToken cancellationToken)
+       Guid id,
+       AttributeMgmtRequest request,
+       CancellationToken cancellationToken)
     {
         try
         {
@@ -120,6 +120,28 @@ public class AttributeMgmtService(
 
             if (attribute == null)
                 return Response.NotFound("Attribute not found");
+
+            bool isAssigned = await database.Users_Attributes
+                .AnyAsync(ua => ua.AttributeId == id, cancellationToken);
+
+            if (isAssigned)
+            {
+                return Response.Conflict(
+                    "This attribute has already been assigned to one or more users and cannot be updated.");
+            }
+
+            // Prevent duplicate attributes
+            bool exists = await database.Attributes.AnyAsync(
+                a => a.Id != id &&
+                     a.AttributeName.ToLower() == request.AttributeName.ToLower() &&
+                     a.AttributeType == request.AttributeType,
+                cancellationToken);
+
+            if (exists)
+            {
+                return Response.Conflict(
+                    "An attribute with the same name and type already exists.");
+            }
 
             attribute.AttributeName = request.AttributeName;
             attribute.AttributeType = request.AttributeType;
@@ -147,6 +169,15 @@ public class AttributeMgmtService(
 
             if (attribute == null)
                 return Response.NotFound("Attribute not found");
+
+            bool isAssigned = await database.Users_Attributes
+               .AnyAsync(ua => ua.AttributeId == id, cancellationToken);
+
+            if (isAssigned)
+            {
+                return Response.Conflict(
+                    "This attribute has already been assigned to one or more users and cannot be delered.");
+            }
 
             database.Attributes.Remove(attribute);
             await database.SaveChangesAsync(cancellationToken);

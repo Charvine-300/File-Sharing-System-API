@@ -16,6 +16,7 @@ builder.Services.RegisterDbContext(fileSystemConfig.ConnectionString);
 builder.Services.RegisterServices();
 
 builder.Services.RegisterAuthentication(builder.Configuration);
+
 builder.Services.AddControllers(x =>
 {
     x.EnableEndpointRouting = false;
@@ -73,6 +74,19 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+
+app.UseCors(options =>
+{
+    options.WithOrigins(
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://localhost:8080"
+        );
+    options.AllowAnyHeader();
+    options.AllowAnyMethod();
+    options.AllowCredentials();
+});
 
 app.UseAuthentication();
 app.UseAuthorization();
