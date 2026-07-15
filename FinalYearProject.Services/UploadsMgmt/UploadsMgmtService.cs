@@ -3,6 +3,7 @@ using CloudinaryDotNet.Actions;
 using FinalYearProject.Data.Context;
 using FinalYearProject.Data.Domain.Config;
 using FinalYearProject.Data.Domain.Entities;
+using FinalYearProject.Data.Domain.Entities.Shared;
 using FinalYearProject.Data.Utilities;
 using FinalYearProject.Services.Encryption;
 using FinalYearProject.Services.Shared;
@@ -53,6 +54,12 @@ public class UploadsMgmtService(
                     x.Filename.Contains(parameters.Search));
             }
 
+            if (parameters.UploadedBy.HasValue)
+            {
+                query = query.Where(x =>
+                    x.UserId == parameters.UploadedBy.Value);
+            }
+
 
             // Total count before pagination
             var totalRecords = await query.CountAsync(cancellationToken);
@@ -71,7 +78,9 @@ public class UploadsMgmtService(
                 a.Id,
                 a.Filename,
                 a.ContentType,
-                a.CreatedAt
+                a.CreatedAt,
+                a.CreatedBy ?? "Unknown",
+                a.UserId
             )).ToList();
 
 
@@ -123,7 +132,8 @@ public class UploadsMgmtService(
                  upload.Filename,
                  upload.ContentType,
                  upload.Policy?.PolicyName ?? "No policy found",
-                 upload.CreatedAt
+                 upload.CreatedAt,
+                 upload.UserId
              );
 
 
@@ -322,9 +332,114 @@ public class UploadsMgmtService(
         });
     }
 
-    Task<ServiceResponse> IUploadsMgmtService.UpdateFilePolicyAsync(Guid id, UpdateFilePolicyRequest request, CancellationToken cancellationToken)
+    public async Task<ServiceResponse> UpdateFilePolicyAsync(
+    Guid id,
+    UpdateFilePolicyRequest request,
+    CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        try
+        {
+            var upload = await database.Uploads
+                .Include(x => x.Policy)
+                .FirstOrDefaultAsync(
+                    x => x.Id == id,
+                    cancellationToken);
+
+            if (upload == null)
+                return Response.NotFound("File not found.");
+
+            if (upload.UserId != userContextService.User.Id &&
+                userContextService.User.UserType != UserType.SuperAdmin)
+            {
+                return Response.Forbidden(
+                    "You are not allowed to update this file.");
+            }
+
+            var newPolicy = await database.Policies
+                .FirstOrDefaultAsync(
+                    p => p.Id == request.PolicyId,
+                    cancellationToken);
+
+            if (newPolicy == null)
+                return Response.NotFound("Policy not found.");
+
+            if (upload.PolicyId == request.PolicyId)
+                return Response.BadRequest(
+                    "The file is already using this policy.");
+
+            var user = await database.Users
+                .FirstOrDefaultAsync(
+                    x => x.Id == userContextService.User.Id,
+                    cancellationToken);
+
+            if (user == null)
+                return Response.NotFound("User not found.");
+
+            string privateKey =
+                encryptionService.Decrypt(user.PrivateKey);
+
+            // Recover the AES key using the current policy
+            var decryptResponse =
+                await _client.PostAsJsonAsync(
+                    $"{config.ABEBaseURL}/decrypt_key",
+                    new
+                    {
+                        private_key = privateKey,
+                        cipher = new
+                        {
+                            abe_ct = upload.AbeCipherText,
+                            wrapped_key = upload.WrappedKey
+                        }
+                    });
+
+            if (!decryptResponse.IsSuccessStatusCode)
+            {
+                return Response.Forbidden(
+                    "You are not authorized to update this file's policy.");
+            }
+
+            var aesResponse =
+                JsonSerializer.Deserialize<DecryptKeyResponse>(
+                    await decryptResponse.Content.ReadAsStringAsync());
+
+            // Encrypt the SAME AES key using the NEW policy
+            var encryptResponse =
+                await _client.PostAsJsonAsync(
+                    $"{config.ABEBaseURL}/encrypt_key",
+                    new
+                    {
+                        aes_key = aesResponse.Aes_Key,
+                        policy = newPolicy.PolicyExpression
+                    });
+
+            if (!encryptResponse.IsSuccessStatusCode)
+            {
+                return Response.BadRequest(
+                    "Unable to encrypt AES key with the new policy.");
+            }
+
+            var wrappedKey =
+                JsonSerializer.Deserialize<EncryptKeyResponse>(
+                    await encryptResponse.Content.ReadAsStringAsync());
+
+            upload.PolicyId = newPolicy.Id;
+            upload.AbeCipherText = wrappedKey.Abe_Ct;
+            upload.WrappedKey = wrappedKey.Wrapped_Key;
+            upload.ModifiedAt = DateTimeOffset.UtcNow;
+            upload.ModifiedBy = userContextService.User.FirstName;
+
+            await database.SaveChangesAsync(cancellationToken);
+
+            return Response.Success(
+                "File policy updated successfully.");
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error updating file policy.");
+
+            return Response.SystemMalfunction(
+                "Something went wrong.");
+        }
     }
 
     public async Task<ServiceResponse> DeleteFileAsync(

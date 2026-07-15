@@ -3,13 +3,15 @@ using FinalYearProject.Data.Domain.Config;
 using FinalYearProject.Data.Domain.Entities;
 using FinalYearProject.Data.Utilities;
 using FinalYearProject.Services.Shared;
+using FinalYearProject.Services.Shared.UserContextService;
+using FinalYearProject.Services.UploadsMgmt;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Attribute = FinalYearProject.Data.Domain.Entities.Attributes.Attribute;
 
 namespace FinalYearProject.Services.PolicyMgmt;
 
-public class PolicyMgmtService(FileSystemDbContext database, FileSystemConfig config) : IPolicyMgmtService
+public class PolicyMgmtService(FileSystemDbContext database, FileSystemConfig config, IUserContextService userContextService) : IPolicyMgmtService
 {
     public async Task<ServiceResponse<PaginationResponse<AllPoliciesResponse>>> GetPoliciesAsync(
       PolicyParameters parameters,
@@ -107,6 +109,7 @@ public class PolicyMgmtService(FileSystemDbContext database, FileSystemConfig co
         {
             Policy? policy =
                 await database.Policies
+                .Include(f => f.Uploads)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(
                     p => p.Id == id,
@@ -127,7 +130,15 @@ public class PolicyMgmtService(FileSystemDbContext database, FileSystemConfig co
                     policy.PolicyName,
                     policy.PolicyExpression,
                     policy.Description,
-                    policy.IsSystemPolicy
+                    policy.IsSystemPolicy,
+                    policy.Uploads.Select(u => new FileResponse(
+                        u.Id,
+                        u.Filename,
+                        u.ContentType,
+                        u.CreatedAt,
+                        u.CreatedBy ?? "Unknown",
+                        u.UserId
+                    )).ToList()
                 );
 
 
@@ -222,7 +233,8 @@ public class PolicyMgmtService(FileSystemDbContext database, FileSystemConfig co
 
                 IsSystemPolicy = false,
 
-                CreatedAt = DateTimeOffset.UtcNow
+                CreatedAt = DateTimeOffset.UtcNow,
+
             };
 
 

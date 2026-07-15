@@ -9,6 +9,6 @@ public class AuditLog: BaseEntity
 {
     public string Action { get; set; }
     public string? Description { get; set; }
-    public string Actor { get; set; } // this will be th user's full name
+    public string Actor { get; set; }
     public ActionType Type { get; set; }
 }

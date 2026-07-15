@@ -1,8 +1,7 @@
 ﻿using FinalYearProject.Data.Domain.Entities.Shared;
 using FinalYearProject.Data.Utilities;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using FinalYearProject.Services.UploadsMgmt;
+
 
 namespace FinalYearProject.Services.PolicyMgmt;
 
@@ -18,7 +17,8 @@ public record PolicyDetailsResponse(
     string PolicyName,
     string PolicyExpression,
     string Description,
-    bool IsSystemPolicy
+    bool IsSystemPolicy,
+    List<FileResponse> EncryptedFiles
 );
 
 public class PolicyParameters : RequestParameters

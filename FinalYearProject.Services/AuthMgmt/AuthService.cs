@@ -146,7 +146,9 @@ public class AuthService(FileSystemDbContext database, FileSystemConfig config, 
             tokenDescriptor.Expires.Value,
             user.FirstName,
             user.LastName,
-            userType.ToString()
+            userType.ToString(),
+            user.Id,
+            user.ProfilePhotoUrl
         );
     }
 

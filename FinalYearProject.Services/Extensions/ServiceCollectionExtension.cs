@@ -2,6 +2,7 @@
 using FinalYearProject.Data.Domain.Config;
 using FinalYearProject.Services.AttributeMgmt;
 using FinalYearProject.Services.AuthMgmt;
+using FinalYearProject.Services.Dashboard;
 using FinalYearProject.Services.EmailTransactionsMgmt;
 using FinalYearProject.Services.EmailTransactionsMgmt.Templates.Auth;
 using FinalYearProject.Services.Encryption;
@@ -40,6 +41,7 @@ public static class ServiceCollectionExtension
         services.AddScoped<IUserContextService, UserContextService>();
         services.AddScoped<IEmailTransactionsMgmtService, EmailTransactionsMgmtService>();
         services.AddScoped<IAuthEmailTemplates, AuthEmailTemplates>();
+        services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IMemoryCache, MemoryCache>();
     }

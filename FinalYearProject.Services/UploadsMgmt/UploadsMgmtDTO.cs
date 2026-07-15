@@ -23,13 +23,15 @@ public record FileResponse(
     Guid Id,
     string FileName,
     string ContentType,
-    DateTimeOffset CreatedAt
+    DateTimeOffset CreatedAt,
+    string UploadedBy,
+    Guid UploadedById
     //Guid PolicyId,
-    //string UploadedBy
 );
 
 public class FileParameters : RequestParameters
 {
+    public Guid? UploadedBy { get; set; }
 }
 
 public record FileDetailsResponse(
@@ -37,8 +39,9 @@ public record FileDetailsResponse(
     string FileName,
     string ContentType,
     string EncryptionPolicy,
-    DateTimeOffset CreatedAt
-    //string UploadedBy
+    DateTimeOffset CreatedAt,
+    Guid UploadedById
+//string UploadedBy
 );
 
 public class FileDownloadResponse

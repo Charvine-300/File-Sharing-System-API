@@ -13,6 +13,8 @@ public class User: BaseEntity
     public UserType UserType { get; set; }
     public bool IsActive { get; set; }
     public string PrivateKey { get; set; }
+    public string? ProfilePhotoPublicId { get; set; }
+    public string? ProfilePhotoUrl { get; set; }
     public virtual ICollection<Upload> Uploads { get; set; } = new List<Upload>();
     public virtual ICollection<UserAttribute> UsersAttributes { get; set; } = new List<UserAttribute>();
     public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();

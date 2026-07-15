@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace FinalYearProject.Services.AuthMgmt;
 
-public record LoginResponse(string AccessToken, string RefreshToken, DateTime ExpiryTimeStamp, string FirstName, string LastName, string UserType);
+public record LoginResponse(string AccessToken, string RefreshToken, DateTime ExpiryTimeStamp, string FirstName, string LastName, string UserType, Guid UserId, string ProfilePhotoUrl);
 
 public class LoginRequest
 {

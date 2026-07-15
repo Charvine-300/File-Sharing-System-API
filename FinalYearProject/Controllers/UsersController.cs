@@ -53,7 +53,7 @@ public class UsersController(IUserMgmtService userService) : BaseController
     [HttpPost("create")]
     [SuperAdmin]
     public async Task<IActionResult> CreateUser(
-        [FromBody] CreateUserRequest request,
+        [FromForm] CreateUserRequest request,
         CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -68,7 +68,7 @@ public class UsersController(IUserMgmtService userService) : BaseController
     [HttpPut("update/{id}")]
     public async Task<IActionResult> UpdateUser(
         Guid id,
-        [FromBody] UpdateUserRequest request,
+        [FromForm] UpdateUserRequest request,
         CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid)
