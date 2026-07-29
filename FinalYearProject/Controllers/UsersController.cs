@@ -9,7 +9,6 @@ namespace FinalYearProject.Controllers;
 [ApiController]
 [Route("api/users")]
 [Authorize]
-//[Authorize]
 public class UsersController(IUserMgmtService userService) : BaseController
 {
     /// <summary>
@@ -35,7 +34,6 @@ public class UsersController(IUserMgmtService userService) : BaseController
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     [HttpGet("{id}")]
-    [SuperAdmin]
     public async Task<IActionResult> GetUser(
         Guid id,
         CancellationToken cancellationToken)

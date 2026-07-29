@@ -5,6 +5,7 @@ using FinalYearProject.Data.Domain.Config;
 using FinalYearProject.Data.Domain.Entities;
 using FinalYearProject.Data.Domain.Entities.Shared;
 using FinalYearProject.Data.Utilities;
+using FinalYearProject.Services.AuditTrails;
 using FinalYearProject.Services.Encryption;
 using FinalYearProject.Services.Shared;
 using FinalYearProject.Services.Shared.UserContextService;
@@ -21,7 +22,8 @@ public class UploadsMgmtService(
     FileSystemConfig config,
     IEncryptionService encryptionService,
     IHttpClientFactory httpClientFactory,
-    IUserContextService userContextService
+    IUserContextService userContextService,
+    IAuditLogMgmtService auditLogService
 ) : IUploadsMgmtService
 {
     private readonly HttpClient _client = httpClientFactory.CreateClient();
@@ -185,6 +187,9 @@ public class UploadsMgmtService(
                 fileBytes,
                 aesKeyBytes);
 
+        string encryptionPolicy =
+            BuildEncryptionPolicy(policy.PolicyExpression); 
+
         // Encrypt AES Key in CP-ABE 
         var pythonResponse =
             await _client.PostAsJsonAsync(
@@ -192,7 +197,7 @@ public class UploadsMgmtService(
                 new
                 {
                     aes_key = aesKey,
-                    policy = policy.PolicyExpression
+                    policy = encryptionPolicy
                 });
 
         if (!pythonResponse.IsSuccessStatusCode)
@@ -248,6 +253,18 @@ public class UploadsMgmtService(
             FileTag = Convert.ToBase64String(encryptedFile.Tag)
         };
 
+
+        await auditLogService.CreateAuditLogAsync(
+            new CreateAuditTrailRequest
+            {
+                Action = "File Upload",
+                Description = $"{userContextService.User.FirstName} {userContextService.User.LastName} uploaded a file `{request.File.FileName}` with the `{policy.PolicyName}` policy",
+                Actor = $"{userContextService.User.FirstName} {userContextService.User.LastName}",
+                ActionType = ActionType.Create
+            },
+            cancellationToken
+        );
+
         database.Uploads.Add(upload);
 
         await database.SaveChangesAsync(cancellationToken);
@@ -263,11 +280,9 @@ public class UploadsMgmtService(
                 x => x.Id == fileId,
                 cancellationToken);
 
-        var dummyUserId = Guid.Parse("019F5242-5AE4-76FC-909D-E81DA24AE221");
-
         var user = await database.Users
             .FirstOrDefaultAsync(
-                x => x.Id == dummyUserId,
+                x => x.Id == userContextService.User.Id,
                 cancellationToken);
 
         if (user == null)
@@ -323,6 +338,17 @@ public class UploadsMgmtService(
             encryptionService.DecryptFile(
                 encryptedFile,
                 Convert.FromBase64String(aesKey));
+
+        await auditLogService.CreateAuditLogAsync(
+            new CreateAuditTrailRequest
+            {
+                Action = "File Download",
+                Description = $"{userContextService.User.FirstName} {userContextService.User.LastName} downloaded a file `{upload.Filename}`",
+                Actor = $"{userContextService.User.FirstName} {userContextService.User.LastName}",
+                ActionType = ActionType.Other
+            },
+            cancellationToken
+        );
 
         return Response.Success<FileDownloadResponse>("File downloaded successfully", new FileDownloadResponse
         {
@@ -402,6 +428,9 @@ public class UploadsMgmtService(
                 JsonSerializer.Deserialize<DecryptKeyResponse>(
                     await decryptResponse.Content.ReadAsStringAsync());
 
+            string encryptionPolicy =
+                BuildEncryptionPolicy(newPolicy.PolicyExpression);
+
             // Encrypt the SAME AES key using the NEW policy
             var encryptResponse =
                 await _client.PostAsJsonAsync(
@@ -409,7 +438,7 @@ public class UploadsMgmtService(
                     new
                     {
                         aes_key = aesResponse.Aes_Key,
-                        policy = newPolicy.PolicyExpression
+                        policy = encryptionPolicy
                     });
 
             if (!encryptResponse.IsSuccessStatusCode)
@@ -427,6 +456,17 @@ public class UploadsMgmtService(
             upload.WrappedKey = wrappedKey.Wrapped_Key;
             upload.ModifiedAt = DateTimeOffset.UtcNow;
             upload.ModifiedBy = userContextService.User.FirstName;
+
+            await auditLogService.CreateAuditLogAsync(
+                new CreateAuditTrailRequest
+                {
+                    Action = "File Policy Update",
+                    Description = $"{userContextService.User.FirstName} {userContextService.User.LastName} updated the policy for file {upload.Filename}",
+                    Actor = $"{userContextService.User.FirstName} {userContextService.User.LastName}",
+                    ActionType = ActionType.Update
+                },
+                cancellationToken
+            );
 
             await database.SaveChangesAsync(cancellationToken);
 
@@ -481,6 +521,17 @@ public class UploadsMgmtService(
             }
 
 
+            await auditLogService.CreateAuditLogAsync(
+                new CreateAuditTrailRequest
+                {
+                    Action = "File Deletion",
+                    Description = $"{userContextService.User.FirstName} {userContextService.User.LastName} deleted file {upload.Filename}",
+                    Actor = $"{userContextService.User.FirstName} {userContextService.User.LastName}",
+                    ActionType = ActionType.Delete
+                },
+                cancellationToken
+            );
+
             // Delete DB record
             database.Uploads.Remove(upload);
 
@@ -501,5 +552,10 @@ public class UploadsMgmtService(
             return Response.SystemMalfunction(
                 "Something went wrong");
         }
+    }
+
+    private string BuildEncryptionPolicy(string policyExpression)
+    {
+        return $"({policyExpression} or SuperAdmin)";
     }
 }

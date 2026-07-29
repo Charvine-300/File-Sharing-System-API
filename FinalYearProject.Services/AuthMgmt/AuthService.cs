@@ -1,11 +1,15 @@
 ﻿
 
 using FinalYearProject.Data.Context;
+using FinalYearProject.Data.Domain;
 using FinalYearProject.Data.Domain.Config;
 using FinalYearProject.Data.Domain.Entities;
 using FinalYearProject.Data.Domain.Entities.Shared;
 using FinalYearProject.Data.Extensions;
 using FinalYearProject.Data.Utilities;
+using FinalYearProject.Services.AuditTrails;
+using FinalYearProject.Services.EmailTransactionsMgmt;
+using FinalYearProject.Services.EmailTransactionsMgmt.Templates.Auth;
 using FinalYearProject.Services.Shared;
 using FinalYearProject.Services.Shared.Security;
 using FinalYearProject.Services.Shared.UserContextService;
@@ -20,7 +24,7 @@ using System.Text;
 
 namespace FinalYearProject.Services.AuthMgmt;
 
-public class AuthService(FileSystemDbContext database, FileSystemConfig config, IUserContextService userContextService) : IAuthService
+public class AuthService(FileSystemDbContext database, IAuditLogMgmtService auditLogService, FileSystemConfig config, IUserContextService userContextService, IAuthEmailTemplates authEmailTemplateService, IEmailTransactionsMgmtService emailService) : IAuthService
 {
     private readonly int RefreshTokenValidity = 7;
     public async Task<ServiceResponse<LoginResponse>> LoginAsync(
@@ -65,6 +69,17 @@ public class AuthService(FileSystemDbContext database, FileSystemConfig config, 
                 user,
                 true,
                 cancellationToken);
+
+            await auditLogService.CreateAuditLogAsync(
+                new CreateAuditTrailRequest
+                {
+                    Action = "Log In",
+                    Description = $"{user.FirstName} {user.LastName} logged in successfully",
+                    Actor = $"{user.FirstName} {user.LastName}",
+                    ActionType = ActionType.Authentication
+                },
+                cancellationToken
+            );
 
             return Response.Success("Login successful.", result);
         }
@@ -114,16 +129,6 @@ public class AuthService(FileSystemDbContext database, FileSystemConfig config, 
                 ];
 
         }
-
-
-        //if (user is CorporateUser || user is BackOfficeUser)
-        //{
-        //    string[] privileges = await GetUserRolePrivilegesAsync(roles, user is CorporateUser);
-        //    foreach (string privilege in privileges)
-        //    {
-        //        claims = [.. claims, new Claim("permission", privilege)];
-        //    }
-        //}
 
         SecurityTokenDescriptor tokenDescriptor = new()
         {
@@ -203,8 +208,6 @@ public class AuthService(FileSystemDbContext database, FileSystemConfig config, 
             return Response.NotFound("User does not exist");
         }
 
-
-
         bool isValidPin = request.OldPassword.Verify(userDetails.Password!);
         if (!isValidPin)
         {
@@ -221,7 +224,231 @@ public class AuthService(FileSystemDbContext database, FileSystemConfig config, 
         userDetails.ModifiedBy = userContextService.User.FirstName;
         userDetails.Password = request.NewPassword.Hash();
 
+        await auditLogService.CreateAuditLogAsync(
+                new CreateAuditTrailRequest
+                {
+                    Action = "Change Password",
+                    Description = $"{userContextService.User.FirstName} {userContextService.User.LastName} changed their password successfully",
+                    Actor = $"{userContextService.User.FirstName} {userContextService.User.LastName}",
+                    ActionType = ActionType.Authentication
+                },
+                cancellationToken
+            );
+
         await database.SaveChangesAsync(cancellationToken);
         return Response.Success("Password updated successfully");
     }
+
+    public async Task<ServiceResponse> ForgotPasswordAsync(
+     ForgotPasswordRequest request,
+     CancellationToken cancellationToken)
+    {
+        try
+        {
+            var user = await database.Users
+                .FirstOrDefaultAsync(
+                    x => x.Email == request.Email,
+                    cancellationToken);
+
+            // Don't reveal whether the email exists
+            if (user == null)
+            {
+                return Response.Success(
+                    "If an account exists with this email address, an OTP has been sent.");
+            }
+
+            // Remove any previous unused OTPs
+            var existingOtps = await database.PasswordResetOtps
+                .Where(x =>
+                    x.UserId == user.Id &&
+                    !x.IsUsed)
+                .ToListAsync(cancellationToken);
+
+            if (existingOtps.Any())
+            {
+                database.PasswordResetOtps.RemoveRange(existingOtps);
+            }
+
+            // Generate a 6-digit OTP
+            string otp = RandomNumberGenerator
+                .GetInt32(100000, 999999)
+                .ToString();
+
+            PasswordResetOtp passwordResetOtp = new()
+            {
+                UserId = user.Id,
+
+                OtpHash = BCrypt.Net.BCrypt.HashPassword(otp),
+
+                ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(10),
+
+                IsUsed = false,
+
+                CreatedAt = DateTimeOffset.UtcNow
+            };
+
+            database.PasswordResetOtps.Add(passwordResetOtp);
+
+            SendEmailRequest emailRequest = new()
+            {
+                To = user.Email,
+
+                Subject = "Reset Your FileShare Password",
+
+                Body = authEmailTemplateService
+                    .PasswordResetOtpTemplate(
+                        user.FirstName,
+                        otp,
+                        10)
+            };
+
+            await emailService.SendEmailAsync(
+                emailRequest,
+                cancellationToken);
+
+            await auditLogService.CreateAuditLogAsync(
+             new CreateAuditTrailRequest
+             {
+                 Action = "Forgot Password",
+                 Description = $"{user.FirstName} {user.LastName} requested a password reset",
+                 Actor = $"{user.FirstName} {user.LastName}",
+                 ActionType = ActionType.Authentication
+             },
+             cancellationToken
+         );
+
+            await database.SaveChangesAsync(
+                cancellationToken);
+
+            return Response.Success(
+                "If an account exists with this email address, an OTP has been sent.");
+        }
+        catch (Exception ex)
+        {
+            Log.Error(
+                ex,
+                "Error sending password reset OTP.");
+
+            return Response.SystemMalfunction(
+                "Something went wrong.");
+        }
+    }
+
+    public async Task<ServiceResponse> VerifyOtpAsync(VerifyResetOtpRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var user = await database.Users
+                .FirstOrDefaultAsync(
+                    x => x.Email == request.Email,
+                    cancellationToken);
+
+            if (user == null)
+            {
+                return Response.NotFound("User not found.");
+            }
+
+            if (string.IsNullOrWhiteSpace(user.PasswordResetOtp))
+            {
+                return Response.BadRequest("No password reset request found.");
+            }
+
+            if (!user.PasswordResetOtpExpiresAt.HasValue ||
+                user.PasswordResetOtpExpiresAt.Value < DateTimeOffset.UtcNow)
+            {
+                return Response.BadRequest("OTP has expired.");
+            }
+
+            if (user.PasswordResetOtp != request.Otp)
+            {
+                return Response.BadRequest("Invalid OTP.");
+            }
+
+            user.IsPasswordResetOtpVerified = true;
+            user.ModifiedAt = DateTimeOffset.UtcNow;
+            user.ModifiedBy = user.FirstName;
+
+            await auditLogService.CreateAuditLogAsync(
+             new CreateAuditTrailRequest
+             {
+                 Action = "Verify Reset OTP",
+                 Description = $"{user.FirstName} {user.LastName} verified their password reset OTP",
+                 Actor = $"{user.FirstName} {user.LastName}",
+                 ActionType = ActionType.Authentication
+             },
+             cancellationToken
+         );
+
+            await database.SaveChangesAsync(cancellationToken);
+
+            return Response.Success("OTP verified successfully.");
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error verifying password reset OTP.");
+
+            return Response.SystemMalfunction("Something went wrong.");
+        }
+    }
+
+    public async Task<ServiceResponse> ResetPasswordAsync(
+     ResetPasswordRequest request,
+     CancellationToken cancellationToken)
+    {
+        try
+        {
+            var user = await database.Users
+                .FirstOrDefaultAsync(
+                    x => x.Email == request.Email,
+                    cancellationToken);
+
+            if (user == null)
+                return Response.NotFound("User not found.");
+
+            var otp = await database.PasswordResetOtps
+                .Where(x =>
+                    x.UserId == user.Id &&
+                    !x.IsUsed)
+                .OrderByDescending(x => x.CreatedAt)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (otp == null)
+                return Response.BadRequest("Invalid reset OTP.");
+
+            if (otp.ExpiresAt < DateTimeOffset.UtcNow)
+                return Response.BadRequest("Reset OTP has expired. Request for another one.");
+
+            if (request.NewPassword != request.ConfirmPassword)
+                return Response.BadRequest("Passwords do not match.");
+
+            user.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+
+            user.ModifiedAt = DateTimeOffset.UtcNow;
+
+            otp.IsUsed = true;
+            otp.ModifiedAt = DateTimeOffset.UtcNow;
+
+            await auditLogService.CreateAuditLogAsync(
+                new CreateAuditTrailRequest
+                {
+                    Action = "Reset Password",
+                    Description = $"Password reset successfully for {user.FirstName} {user.LastName}",
+                    Actor = $"{user.FirstName} {user.LastName}",
+                    ActionType = ActionType.Update
+                },
+                cancellationToken);
+
+
+            await database.SaveChangesAsync(cancellationToken);
+
+            return Response.Success("Password has been reset successfully.");
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error resetting password");
+
+            return Response.SystemMalfunction("Something went wrong.");
+        }
+    }
+
 }

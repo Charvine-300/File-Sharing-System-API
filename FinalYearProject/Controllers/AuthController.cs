@@ -1,6 +1,7 @@
 ﻿using FinalYearProject.Controllers.Shared;
 using FinalYearProject.Data.Utilities;
 using FinalYearProject.Services.AuthMgmt;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 
@@ -38,7 +39,6 @@ public class AuthController(IAuthService authService) : BaseController
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     [HttpPost("change-password")]
-    //[HasPermission("trail.read")]
 
     [ProducesResponseType(200, Type = typeof(ApiResponse))]
     [ProducesResponseType(400, Type = typeof(ApiResponse))]
@@ -48,6 +48,70 @@ public class AuthController(IAuthService authService) : BaseController
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
         ServiceResponse response = await authService.ChangePasswordAsync(parameters, cancellationToken);
+        return ComputeResponse(response);
+    }
+
+
+    /// <summary>
+    /// Initiate password reset process. Trigger OTp send
+    /// </summary>
+    /// <param name="parameters"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    [HttpPost("forgot-password")]
+
+    [ProducesResponseType(200, Type = typeof(ApiResponse))]
+    [ProducesResponseType(400, Type = typeof(ApiResponse))]
+    [ProducesResponseType(404, Type = typeof(ApiResponse))]
+    public async Task<IActionResult> ForgotPassword(
+    ForgotPasswordRequest request,
+    CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        ServiceResponse response = await authService.ForgotPasswordAsync(request, cancellationToken);
+        return ComputeResponse(response);
+    }
+
+
+    /// <summary>
+    /// Verify the OTP sent to the user for password reset
+    /// </summary>
+    /// <param name="parameters"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    [HttpPost("verify-reset-otp")]
+
+    [ProducesResponseType(200, Type = typeof(ApiResponse))]
+    [ProducesResponseType(400, Type = typeof(ApiResponse))]
+    [ProducesResponseType(404, Type = typeof(ApiResponse))]
+    public async Task<IActionResult> VerifyOtp(
+      VerifyResetOtpRequest request,
+      CancellationToken cancellationToken)
+    {
+        return Ok(await authService
+            .VerifyOtpAsync(request, cancellationToken));
+    }
+
+
+    /// <summary>
+    /// Reset password 
+    /// </summary>
+    /// <param name="parameters"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    [HttpPost("reset-password")]
+
+    [ProducesResponseType(200, Type = typeof(ApiResponse))]
+    [ProducesResponseType(400, Type = typeof(ApiResponse))]
+    [ProducesResponseType(404, Type = typeof(ApiResponse))]
+    public async Task<IActionResult> ResetPassword(
+        ResetPasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        ServiceResponse response = await authService.ResetPasswordAsync(request, cancellationToken); 
         return ComputeResponse(response);
     }
 }

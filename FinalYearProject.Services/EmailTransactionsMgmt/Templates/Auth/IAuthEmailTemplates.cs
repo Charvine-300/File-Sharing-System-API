@@ -7,4 +7,9 @@ public interface IAuthEmailTemplates
         string email,
         string password,
         string loginUrl);
+
+    string PasswordResetOtpTemplate(
+    string firstName,
+    string otp,
+    int time);
 }

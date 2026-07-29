@@ -27,5 +27,6 @@ public enum ActionType
     Create = 1,
     Update = 2,
     Delete = 3,
-    Other = 4
+    Authentication = 4,
+    Other = 5
 }

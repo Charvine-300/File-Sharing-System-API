@@ -3,9 +3,6 @@ using FinalYearProject.Data.Utilities;
 using FinalYearProject.Services.Shared;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace FinalYearProject.Services.Dashboard;
 

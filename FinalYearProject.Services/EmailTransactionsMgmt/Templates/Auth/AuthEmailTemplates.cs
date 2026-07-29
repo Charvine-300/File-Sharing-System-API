@@ -24,7 +24,7 @@ public class AuthEmailTemplates: IAuthEmailTemplates
                     text-align:center;'>
 
             <h1 style='color:white; margin:0;'>
-                Welcome to FileShare 🎉
+                Welcome to Vault 🎉
             </h1>
         </div>
 
@@ -36,7 +36,7 @@ public class AuthEmailTemplates: IAuthEmailTemplates
 
             <p style='font-size:16px; color:#4b5563;'>
                 Your account has been successfully created.
-                You can now log in and access the FileShare File Sharing System.
+                You can now log in and access the Vault File Sharing System.
             </p>
 
             <div style='background:#f3f4f6;
@@ -81,13 +81,66 @@ public class AuthEmailTemplates: IAuthEmailTemplates
             <p style='margin-top:32px;'>
 
                 Regards,<br/>
-                <strong>FileShare Team</strong>
+                <strong>Vault Team</strong>
 
             </p>
 
         </div>
 
     </div>
+
+</div>";
+    }
+
+    public string PasswordResetOtpTemplate(
+    string firstName,
+    string otp, int time)
+    {
+        return $@"
+<div style='font-family:Arial,sans-serif;background:#f5f7fb;padding:40px;'>
+
+<div style='max-width:600px;margin:auto;background:white;border-radius:12px;padding:32px;'>
+
+<h2>Hello {firstName},</h2>
+
+<p>
+We received a request to reset your password.
+</p>
+
+<p>
+Use the OTP below to continue.
+</p>
+
+<div style='font-size:36px;
+            font-weight:bold;
+            text-align:center;
+            letter-spacing:8px;
+            color:#2563eb;
+            margin:30px 0;'>
+
+{otp}
+
+</div>
+
+<p>
+This code expires in
+<strong>{time} minutes</strong>.
+</p>
+
+<p>
+If you did not request this,
+please ignore this email.
+</p>
+
+<p>
+
+Regards,<br/>
+
+<strong>Vault Team</strong>
+
+</p>
+
+</div>
 
 </div>";
     }

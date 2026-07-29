@@ -6,11 +6,14 @@ using FinalYearProject.Data.Context;
 using FinalYearProject.Data.Domain.Config;
 using FinalYearProject.Data.Domain.Entities;
 using FinalYearProject.Data.Domain.Entities.Attributes;
+using FinalYearProject.Data.Domain.Entities.Shared;
 using FinalYearProject.Data.Utilities;
+using FinalYearProject.Services.AuditTrails;
 using FinalYearProject.Services.EmailTransactionsMgmt;
 using FinalYearProject.Services.EmailTransactionsMgmt.Templates.Auth;
 using FinalYearProject.Services.Encryption;
 using FinalYearProject.Services.Shared;
+using FinalYearProject.Services.Shared.UserContextService;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -26,7 +29,9 @@ public class UserMgmtService(
     IEncryptionService encryptionService,
     IHttpClientFactory httpClientFactory,
     IAuthEmailTemplates authEmailTemplateService,
-    IEmailTransactionsMgmtService emailService
+    IEmailTransactionsMgmtService emailService,
+    IUserContextService userContextService,
+    IAuditLogMgmtService auditLogService
 ) : IUserMgmtService
 {
     private readonly Cloudinary _cloudinary =
@@ -193,6 +198,17 @@ public class UserMgmtService(
                 });
             }
 
+            await auditLogService.CreateAuditLogAsync(
+                new CreateAuditTrailRequest
+                {
+                    Action = "Create User",
+                    Description = $"New User created successfully",
+                    Actor = $"{userContextService.User.FirstName} {userContextService.User.LastName}",
+                    ActionType = ActionType.Create
+                },
+                cancellationToken
+            );
+
             database.Users.Add(user);
 
             SendEmailRequest emailRequest = new()
@@ -275,6 +291,17 @@ public class UserMgmtService(
 
             user.ModifiedAt = DateTimeOffset.UtcNow;
 
+            //await auditLogService.CreateAuditLogAsync(
+            //    new CreateAuditTrailRequest
+            //    {
+            //        Action = "Update User",
+            //        Description = $"User details updated successfully",
+            //        Actor = $"{userContextService.User.FirstName} {userContextService.User.LastName}",
+            //        ActionType = ActionType.Update
+            //    },
+            //    cancellationToken
+            //);
+
             await database.SaveChangesAsync(cancellationToken);
 
             return Response.Success("User updated successfully");
@@ -346,6 +373,18 @@ public class UserMgmtService(
 
             user.ModifiedAt = DateTimeOffset.UtcNow;
 
+
+            //await auditLogService.CreateAuditLogAsync(
+            //    new CreateAuditTrailRequest
+            //    {
+            //        Action = "Update User Attributes",
+            //        Description = $"User attributes updated successfully",
+            //        Actor = $"{userContextService.User.FirstName} {userContextService.User.LastName}",
+            //        ActionType = ActionType.Update
+            //    },
+            //    cancellationToken
+            //);
+
             await database.SaveChangesAsync(cancellationToken);
 
             return Response.Success("User attributes updated successfully.");
@@ -374,6 +413,17 @@ public class UserMgmtService(
 
             user.IsActive = request.IsActive;
             user.ModifiedAt = DateTimeOffset.UtcNow;
+
+            //await auditLogService.CreateAuditLogAsync(
+            //    new CreateAuditTrailRequest
+            //    {
+            //        Action = "Change User Status",
+            //        Description = $"User status updated successfully",
+            //        Actor = $"{userContextService.User.FirstName} {userContextService.User.LastName}",
+            //        ActionType = ActionType.Update
+            //    },
+            //    cancellationToken
+            //);
 
             await database.SaveChangesAsync(cancellationToken);
 
@@ -436,6 +486,16 @@ public class UserMgmtService(
         user.IsActive = false;
         user.ModifiedAt = DateTimeOffset.UtcNow;
 
+        //await auditLogService.CreateAuditLogAsync(
+        //    new CreateAuditTrailRequest
+        //    {
+        //        Action = "Delete User",
+        //        Description = $"User deleted successfully",
+        //        Actor = $"{userContextService.User.FirstName} {userContextService.User.LastName}",
+        //        ActionType = ActionType.Delete
+        //    },
+        //    cancellationToken
+        //);
 
         await database.SaveChangesAsync(cancellationToken);
 

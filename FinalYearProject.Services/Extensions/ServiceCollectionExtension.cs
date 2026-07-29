@@ -1,6 +1,7 @@
 ﻿using FinalYearProject.Data.Context;
 using FinalYearProject.Data.Domain.Config;
 using FinalYearProject.Services.AttributeMgmt;
+using FinalYearProject.Services.AuditTrails;
 using FinalYearProject.Services.AuthMgmt;
 using FinalYearProject.Services.Dashboard;
 using FinalYearProject.Services.EmailTransactionsMgmt;
@@ -42,6 +43,7 @@ public static class ServiceCollectionExtension
         services.AddScoped<IEmailTransactionsMgmtService, EmailTransactionsMgmtService>();
         services.AddScoped<IAuthEmailTemplates, AuthEmailTemplates>();
         services.AddScoped<IDashboardService, DashboardService>();
+        services.AddScoped<IAuditLogMgmtService, AuditLogMgmtService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IMemoryCache, MemoryCache>();
     }

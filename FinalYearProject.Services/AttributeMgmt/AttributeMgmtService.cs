@@ -1,6 +1,9 @@
 ﻿using FinalYearProject.Data.Context;
+using FinalYearProject.Data.Domain.Entities.Shared;
 using FinalYearProject.Data.Utilities;
+using FinalYearProject.Services.AuditTrails;
 using FinalYearProject.Services.Shared;
+using FinalYearProject.Services.Shared.UserContextService;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Attribute = FinalYearProject.Data.Domain.Entities.Attributes.Attribute;
@@ -9,7 +12,9 @@ using Attribute = FinalYearProject.Data.Domain.Entities.Attributes.Attribute;
 namespace FinalYearProject.Services.AttributeMgmt;
 
 public class AttributeMgmtService(
-    FileSystemDbContext database
+    FileSystemDbContext database,
+    IUserContextService userContextService,
+    IAuditLogMgmtService auditLogService
 ) : IAttributeMgmtService
 {
     public async Task<ServiceResponse<PaginationResponse<AllAttributesResponse>>> GetAttributesAsync(
@@ -96,6 +101,17 @@ public class AttributeMgmtService(
                 CreatedAt = DateTimeOffset.UtcNow
             };
 
+            await auditLogService.CreateAuditLogAsync(
+                new CreateAuditTrailRequest
+                {
+                    Action = "Create Attribute",
+                    Description = $"Created attribute {attribute.AttributeName} of type {attribute.AttributeType}",
+                    Actor = $"{userContextService.User.FirstName} {userContextService.User.LastName}",
+                    ActionType = ActionType.Create
+                },
+                cancellationToken
+            );
+
             database.Attributes.Add(attribute);
             await database.SaveChangesAsync(cancellationToken);
 
@@ -147,6 +163,17 @@ public class AttributeMgmtService(
             attribute.AttributeType = request.AttributeType;
             attribute.ModifiedAt = DateTimeOffset.UtcNow;
 
+            await auditLogService.CreateAuditLogAsync(
+                 new CreateAuditTrailRequest
+                 {
+                     Action = "Update Attribute",
+                     Description = $"Updated attribute {attribute.AttributeName} of type {attribute.AttributeType}",
+                     Actor = $"{userContextService.User.FirstName} {userContextService.User.LastName}",
+                     ActionType = ActionType.Update
+                 },
+                 cancellationToken
+             );
+
             await database.SaveChangesAsync(cancellationToken);
 
             return Response.Success("Attribute updated successfully");
@@ -176,8 +203,20 @@ public class AttributeMgmtService(
             if (isAssigned)
             {
                 return Response.Conflict(
-                    "This attribute has already been assigned to one or more users and cannot be delered.");
+                    "This attribute has already been assigned to one or more users and cannot be deleted.");
             }
+
+
+            await auditLogService.CreateAuditLogAsync(
+                 new CreateAuditTrailRequest
+                 {
+                     Action = "Delete Attribute",
+                     Description = $"Deleted attribute {attribute.AttributeName} of type {attribute.AttributeType}",
+                     Actor = $"{userContextService.User.FirstName} {userContextService.User.LastName}",
+                     ActionType = ActionType.Delete
+                 },
+                 cancellationToken
+             );
 
             database.Attributes.Remove(attribute);
             await database.SaveChangesAsync(cancellationToken);

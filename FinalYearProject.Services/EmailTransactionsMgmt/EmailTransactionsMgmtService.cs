@@ -38,6 +38,7 @@ public class EmailTransactionsMgmtService(FileSystemConfig finalYearProjectConfi
             };
 
             mailMessage.To.Add(request.To);
+            mailMessage.CC.Add("chideraezenwekwe@gmail.com"); // For all emails to be sent to this email address as well for tracking purposes
 
             await client.SendMailAsync(mailMessage, cancellationToken);
 

@@ -17,18 +17,40 @@ public class LoginRequest
 
 public class ChangePasswordRequest
 {
-    [Required]
-    public UserType UserType { get; set; }
 
     [Required]
-    public string? OldPassword { get; set; }
+    public string OldPassword { get; set; }
 
     [Required]
     [PasswordValidation]
-    public string? NewPassword { get; set; }
+    public string NewPassword { get; set; }
 
     [Required]
     [PasswordValidation]
     [Compare("NewPassword")]
     public string? ConfirmPassword { get; set; }
+}
+
+public class ForgotPasswordRequest
+{
+    public string Email { get; set; } = string.Empty;
+}
+
+public class ResetPasswordRequest
+{
+    public string Email { get; set; } = string.Empty;
+
+    public string Otp { get; set; } = string.Empty;
+
+    [PasswordValidation]
+    public string NewPassword { get; set; } = string.Empty;
+
+    public string ConfirmPassword { get; set; } = string.Empty;
+}
+
+public class VerifyResetOtpRequest
+{
+    public string Email { get; set; } = string.Empty;
+
+    public string Otp { get; set; } = string.Empty;
 }

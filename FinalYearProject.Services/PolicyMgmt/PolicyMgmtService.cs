@@ -1,7 +1,10 @@
 ﻿using FinalYearProject.Data.Context;
 using FinalYearProject.Data.Domain.Config;
 using FinalYearProject.Data.Domain.Entities;
+using FinalYearProject.Data.Domain.Entities.Attributes;
+using FinalYearProject.Data.Domain.Entities.Shared;
 using FinalYearProject.Data.Utilities;
+using FinalYearProject.Services.AuditTrails;
 using FinalYearProject.Services.Shared;
 using FinalYearProject.Services.Shared.UserContextService;
 using FinalYearProject.Services.UploadsMgmt;
@@ -11,7 +14,7 @@ using Attribute = FinalYearProject.Data.Domain.Entities.Attributes.Attribute;
 
 namespace FinalYearProject.Services.PolicyMgmt;
 
-public class PolicyMgmtService(FileSystemDbContext database, FileSystemConfig config, IUserContextService userContextService) : IPolicyMgmtService
+public class PolicyMgmtService(FileSystemDbContext database, FileSystemConfig config, IAuditLogMgmtService auditLogService, IUserContextService userContextService) : IPolicyMgmtService
 {
     public async Task<ServiceResponse<PaginationResponse<AllPoliciesResponse>>> GetPoliciesAsync(
       PolicyParameters parameters,
@@ -160,8 +163,6 @@ public class PolicyMgmtService(FileSystemDbContext database, FileSystemConfig co
     }
 
 
-
-
     public async Task<ServiceResponse> CreatePolicyAsync(
         CreatePolicyRequest request,
         CancellationToken cancellationToken)
@@ -237,15 +238,32 @@ public class PolicyMgmtService(FileSystemDbContext database, FileSystemConfig co
 
             };
 
-
-
             database.Policies.Add(policy);
+
+            var policyAttributes = attributeIds
+                 .Distinct()
+                 .Select(attributeId => new PolicyAttribute
+                 {
+                     PolicyId = policy.Id,
+                     AttributeId = attributeId,
+                     CreatedAt = DateTimeOffset.UtcNow
+                 });
+
+            database.Policies_Attributes.AddRange(policyAttributes);
+
+            await auditLogService.CreateAuditLogAsync(
+                  new CreateAuditTrailRequest
+                  {
+                      Action = "Create Policy",
+                      Description = $"{policy.PolicyName} policy created successfully",
+                      Actor = $"{userContextService.User.FirstName} {userContextService.User.LastName}",
+                      ActionType = ActionType.Create
+                  },
+                  cancellationToken
+              );
 
             await database.SaveChangesAsync(
                 cancellationToken);
-
-
-
             return Response.Created(
                 "Policy created successfully");
         }
@@ -283,8 +301,6 @@ public class PolicyMgmtService(FileSystemDbContext database, FileSystemConfig co
 
             return attribute.AttributeName;
         }
-
-
 
         // Operator node
         if (!node.Operator.HasValue ||
@@ -358,11 +374,19 @@ public class PolicyMgmtService(FileSystemDbContext database, FileSystemConfig co
             policy.ModifiedAt =
                 DateTimeOffset.UtcNow;
 
+            await auditLogService.CreateAuditLogAsync(
+                new CreateAuditTrailRequest
+                {
+                    Action = "Update Policy",
+                    Description = $"{policy.PolicyName} policy updated successfully",
+                    Actor = $"{userContextService.User.FirstName} {userContextService.User.LastName}",
+                    ActionType = ActionType.Update
+                },
+                cancellationToken
+            );
 
             await database.SaveChangesAsync(
                 cancellationToken);
-
-
             return Response.Success(
                 "Policy updated successfully");
         }
@@ -427,11 +451,18 @@ public class PolicyMgmtService(FileSystemDbContext database, FileSystemConfig co
                     "This policy cannot be deleted because it is attached to uploaded files");
             }
 
-
+            await auditLogService.CreateAuditLogAsync(
+                new CreateAuditTrailRequest
+                {
+                    Action = "Delete Policy",
+                    Description = $"{policy.PolicyName} policy deleted successfully",
+                    Actor = $"{userContextService.User.FirstName} {userContextService.User.LastName}",
+                    ActionType = ActionType.Delete
+                },
+                cancellationToken
+            );
 
             database.Policies.Remove(policy);
-
-
             await database.SaveChangesAsync(
                 cancellationToken);
 

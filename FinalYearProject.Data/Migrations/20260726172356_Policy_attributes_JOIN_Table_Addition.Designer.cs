@@ -4,6 +4,7 @@ using FinalYearProject.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FinalYearProject.Data.Migrations
 {
     [DbContext(typeof(FileSystemDbContext))]
-    partial class FileSystemDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260726172356_Policy_attributes_JOIN_Table_Addition")]
+    partial class Policy_attributes_JOIN_Table_Addition
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -373,9 +376,6 @@ namespace FinalYearProject.Data.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("IsPasswordResetOtpVerified")
-                        .HasColumnType("bit");
-
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -389,12 +389,6 @@ namespace FinalYearProject.Data.Migrations
                     b.Property<string>("Password")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PasswordResetOtp")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTimeOffset?>("PasswordResetOtpExpiresAt")
-                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("PrivateKey")
                         .IsRequired()
@@ -412,50 +406,6 @@ namespace FinalYearProject.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
-                });
-
-            modelBuilder.Entity("FinalYearProject.Data.Domain.PasswordResetOtp", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("Deleted")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<DateTimeOffset>("ExpiresAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<bool>("IsUsed")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTimeOffset?>("ModifiedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("ModifiedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("OtpHash")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("PasswordResetOtps");
                 });
 
             modelBuilder.Entity("FinalYearProject.Data.Domain.Entities.Attributes.PolicyAttribute", b =>
@@ -520,17 +470,6 @@ namespace FinalYearProject.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Policy");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("FinalYearProject.Data.Domain.PasswordResetOtp", b =>
-                {
-                    b.HasOne("FinalYearProject.Data.Domain.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
 
                     b.Navigation("User");
                 });
