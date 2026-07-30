@@ -51,7 +51,7 @@ public class UsersController(IUserMgmtService userService) : BaseController
     [HttpPost("create")]
     [SuperAdmin]
     public async Task<IActionResult> CreateUser(
-        [FromForm] CreateUserRequest request,
+        [FromBody] CreateUserRequest request,
         CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -95,6 +95,29 @@ public class UsersController(IUserMgmtService userService) : BaseController
             return BadRequest(ModelState);
 
         var response = await userService.UpdateUserAttributesAsync(
+            id,
+            request,
+            cancellationToken);
+
+        return ComputeResponse(response);
+    }
+
+
+    /// <summary>
+    /// Update user's status
+    /// Reserved for Super Admins
+    /// </summary>
+    [HttpPut("{id}/status")]
+    [SuperAdmin]
+    public async Task<IActionResult> UpdateUserStatus(
+        Guid id,
+        [FromBody] UserStatusRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var response = await userService.UpdateUserStatusAsync(
             id,
             request,
             cancellationToken);

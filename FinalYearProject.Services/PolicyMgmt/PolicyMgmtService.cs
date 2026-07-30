@@ -6,6 +6,7 @@ using FinalYearProject.Data.Domain.Entities.Shared;
 using FinalYearProject.Data.Utilities;
 using FinalYearProject.Services.AuditTrails;
 using FinalYearProject.Services.Shared;
+using FinalYearProject.Services.Shared.PolicyAuthorizationService;
 using FinalYearProject.Services.Shared.UserContextService;
 using FinalYearProject.Services.UploadsMgmt;
 using Microsoft.EntityFrameworkCore;
@@ -14,7 +15,7 @@ using Attribute = FinalYearProject.Data.Domain.Entities.Attributes.Attribute;
 
 namespace FinalYearProject.Services.PolicyMgmt;
 
-public class PolicyMgmtService(FileSystemDbContext database, FileSystemConfig config, IAuditLogMgmtService auditLogService, IUserContextService userContextService) : IPolicyMgmtService
+public class PolicyMgmtService(FileSystemDbContext database, FileSystemConfig config, IAuditLogMgmtService auditLogService, IUserContextService userContextService, IPolicyAuthorizationService policyAuthorizationService) : IPolicyMgmtService
 {
     public async Task<ServiceResponse<PaginationResponse<AllPoliciesResponse>>> GetPoliciesAsync(
       PolicyParameters parameters,
@@ -187,11 +188,13 @@ public class PolicyMgmtService(FileSystemDbContext database, FileSystemConfig co
 
 
 
-            List<Attribute> attributes =
-        await database.Attributes
-        .Where(a => attributeIds.Contains(a.Id))
-        .ToListAsync(cancellationToken);
+            attributeIds = attributeIds
+                .Distinct()
+                .ToList();
 
+            List<Attribute> attributes = await database.Attributes
+                .Where(a => attributeIds.Contains(a.Id))
+                .ToListAsync(cancellationToken);
 
             if (attributes.Count != attributeIds.Count)
             {
@@ -222,7 +225,34 @@ public class PolicyMgmtService(FileSystemDbContext database, FileSystemConfig co
                     "A policy with this expression already exists");
             }
 
+            var isSuperAdmin = userContextService.User.UserType == UserType.SuperAdmin;
+            Console.WriteLine($"isSuperAdmin: {isSuperAdmin}");
 
+            var currentUser = await database.Users
+                .Include(u => u.UsersAttributes)
+                .FirstOrDefaultAsync(u => u.Id == userContextService.User.Id, cancellationToken);
+
+            Console.WriteLine(
+                $"Current user attributes: {string.Join(", ", currentUser.UsersAttributes.Select(x => x.AttributeId))}");
+
+            Console.WriteLine(
+                $"Policy attributes: {string.Join(", ", attributeIds)}");
+
+            Console.WriteLine(
+                $"User attributes: {string.Join(", ", currentUser.UsersAttributes.Select(x => x.AttributeId))}");
+
+            var authorizationResult =
+                policyAuthorizationService.CanCreatePolicy(
+                    request.Rules,
+                    currentUser.UsersAttributes
+                        .Select(x => x.AttributeId),
+                    isSuperAdmin);
+
+            if (!authorizationResult.IsAuthorized)
+            {
+                return Response.Forbidden(
+                    authorizationResult.FailureReason);
+            }
 
             Policy policy = new()
             {
@@ -451,6 +481,14 @@ public class PolicyMgmtService(FileSystemDbContext database, FileSystemConfig co
                     "This policy cannot be deleted because it is attached to uploaded files");
             }
 
+            // Remove all policy-attribute mappings first
+            var policyAttributes = await database.Policies_Attributes
+                .Where(pa => pa.PolicyId == id)
+                .ToListAsync(cancellationToken);
+
+            database.Policies_Attributes.RemoveRange(policyAttributes);
+            database.Policies.Remove(policy);
+
             await auditLogService.CreateAuditLogAsync(
                 new CreateAuditTrailRequest
                 {
@@ -462,11 +500,8 @@ public class PolicyMgmtService(FileSystemDbContext database, FileSystemConfig co
                 cancellationToken
             );
 
-            database.Policies.Remove(policy);
             await database.SaveChangesAsync(
                 cancellationToken);
-
-
 
             return Response.Success(
                 "Policy deleted successfully");

@@ -81,6 +81,7 @@ public class AuthService(FileSystemDbContext database, IAuditLogMgmtService audi
                 cancellationToken
             );
 
+            await database.SaveChangesAsync(cancellationToken);
             return Response.Success("Login successful.", result);
         }
         catch (Exception ex)
@@ -293,7 +294,7 @@ public class AuthService(FileSystemDbContext database, IAuditLogMgmtService audi
             {
                 To = user.Email,
 
-                Subject = "Reset Your FileShare Password",
+                Subject = "Reset Your Vault Password",
 
                 Body = authEmailTemplateService
                     .PasswordResetOtpTemplate(

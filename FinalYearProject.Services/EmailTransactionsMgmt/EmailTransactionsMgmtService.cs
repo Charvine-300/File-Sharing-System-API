@@ -30,7 +30,7 @@ public class EmailTransactionsMgmtService(FileSystemConfig finalYearProjectConfi
             {
                 From = new MailAddress(
                     finalYearProjectConfig.EmailConfig.Username,
-                    "Zenly"),
+                    "Vault"),
 
                 Subject = request.Subject,
                 Body = request.Body,
@@ -80,7 +80,7 @@ public class EmailTransactionsMgmtService(FileSystemConfig finalYearProjectConfi
             {
                 From = new MailAddress(
                     finalYearProjectConfig.EmailConfig.Username,
-                    "Zenly"),
+                    "Vault"),
 
                 Subject = request.Subject,
                 Body = request.Body,

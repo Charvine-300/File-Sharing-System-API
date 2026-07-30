@@ -8,6 +8,7 @@ using FinalYearProject.Data.Utilities;
 using FinalYearProject.Services.AuditTrails;
 using FinalYearProject.Services.Encryption;
 using FinalYearProject.Services.Shared;
+using FinalYearProject.Services.Shared.PolicyAuthorizationService;
 using FinalYearProject.Services.Shared.UserContextService;
 using Microsoft.EntityFrameworkCore;
 using System.Net.Http.Json;
@@ -23,7 +24,8 @@ public class UploadsMgmtService(
     IEncryptionService encryptionService,
     IHttpClientFactory httpClientFactory,
     IUserContextService userContextService,
-    IAuditLogMgmtService auditLogService
+    IAuditLogMgmtService auditLogService,
+    IPolicyAuthorizationService policyAuthorizationService
 ) : IUploadsMgmtService
 {
     private readonly HttpClient _client = httpClientFactory.CreateClient();
@@ -164,6 +166,29 @@ public class UploadsMgmtService(
         if (policy == null)
         {
             return Response.NotFound("Policy not found");
+        }
+
+
+        if (request?.Vetted == false)
+        {
+
+            var isSuperAdmin = userContextService.User.UserType == UserType.SuperAdmin;
+            var currentUser = await database.Users
+                .Include(u => u.UsersAttributes)
+                .FirstOrDefaultAsync(u => u.Id == userContextService.User.Id, cancellationToken);
+
+            var authorizationResult =
+                policyAuthorizationService.CanBypassPolicy(
+                    policy.PolicyExpression,
+                    currentUser.UsersAttributes
+                        .Select(x => x.AttributeId),
+                    isSuperAdmin);
+
+            if (!authorizationResult.IsAuthorized)
+            {
+                return Response.Forbidden(
+                    authorizationResult.FailureReason);
+            }
         }
 
         // Read the file into a byte array
@@ -350,6 +375,7 @@ public class UploadsMgmtService(
             cancellationToken
         );
 
+        await database.SaveChangesAsync(cancellationToken);
         return Response.Success<FileDownloadResponse>("File downloaded successfully", new FileDownloadResponse
         {
             FileBytes = plaintext,

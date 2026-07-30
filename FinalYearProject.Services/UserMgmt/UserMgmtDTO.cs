@@ -13,8 +13,8 @@ public class CreateUserRequest
     public string Email { get; set; } = string.Empty;
     public Guid[] Attributes { get; set; }
 
-    [AllowedImageExtensions]
-    public IFormFile? ProfilePhoto { get; set; }
+    //[AllowedImageExtensions]
+    //public IFormFile? ProfilePhoto { get; set; }
 }
 
 public class UpdateUserRequest
@@ -56,6 +56,7 @@ public record AllUsersResponse(
 public class UserParameters : RequestParameters
 {
     public bool? IsActive { get; set; }
+    public List<Guid>? AttributeIds { get; set; }
 }
 
 public class UserStatusRequest

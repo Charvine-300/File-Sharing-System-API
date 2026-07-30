@@ -84,7 +84,6 @@ public class AuditLogMgmtService(IUserContextService userContextService, FileSys
         };
 
         database.AuditLogs.Add(trail);
-        await database.SaveChangesAsync();
     }
 
     public async Task<ServiceResponse> DeleteAuditLogAsync(Guid auditLogId, CancellationToken cancellationToken)

@@ -68,7 +68,7 @@ public class AuthEmailTemplates: IAuthEmailTemplates
                           display:inline-block;
                           font-weight:bold;'>
 
-                    Login to Zenly
+                    Login to Vault
 
                 </a>
 

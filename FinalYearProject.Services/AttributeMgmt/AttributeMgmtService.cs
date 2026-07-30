@@ -33,6 +33,9 @@ public class AttributeMgmtService(
             query = query.Where(a => a.AttributeType == parameters.AttributeType);
         }
 
+        // Removing the Super Admin option
+        query = query.Where(a => a.AttributeName.ToLower() != "superadmin");
+
         int totalCount = await query.CountAsync(cancellationToken);
         int totalPages = (int)Math.Ceiling((double)totalCount / parameters.PageSize);
 

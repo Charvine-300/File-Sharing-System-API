@@ -11,6 +11,8 @@ public class FileMgmtRequest
 
     // Policy selected by user
     public Guid PolicyId { get; set; }
+
+    public bool? Vetted { get; set; } = false;
 }
 
 public class UpdateFilePolicyRequest

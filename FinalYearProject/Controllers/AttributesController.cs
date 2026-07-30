@@ -18,7 +18,6 @@ public class AttributesController(IAttributeMgmtService attributeService) : Base
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     [HttpGet]
-    [SuperAdmin]
     public async Task<IActionResult> GetAttributes(
         [FromQuery] AttributeParameters parameters,
         CancellationToken cancellationToken)
