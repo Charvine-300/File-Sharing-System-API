@@ -26,7 +26,13 @@ public class FileSystemDbContext(DbContextOptions<FileSystemDbContext> options, 
     {
         base.OnModelCreating(modelBuilder);
 
-  
+        modelBuilder.Entity<RefreshToken>(entity =>
+        {
+            entity.Property(e => e.TimeStamp)
+                .IsRequired()
+                .IsConcurrencyToken()
+                .ValueGeneratedOnAddOrUpdate();
+        });
     }
 
 }

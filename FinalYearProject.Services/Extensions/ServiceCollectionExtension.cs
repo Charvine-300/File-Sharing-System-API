@@ -60,7 +60,7 @@ public static class ServiceCollectionExtension
         services.AddDbContext<FileSystemDbContext>(options =>
         {
             options.UseLazyLoadingProxies();
-            options.UseSqlServer(connectionString, s =>
+            options.UseNpgsql(connectionString, s =>
             {
                 s.EnableRetryOnFailure(3);
             });
