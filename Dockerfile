@@ -3,7 +3,7 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 # Copy project files and restore dependencies
-COPY FinalYearProject.sln ./
+COPY FinalYearProject.slnx ./
 COPY FinalYearProject/*.csproj FinalYearProject/
 COPY FinalYearProject.Data/*.csproj FinalYearProject.Data/
 COPY FinalYearProject.Services/*.csproj FinalYearProject.Services/
