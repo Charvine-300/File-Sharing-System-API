@@ -18,7 +18,8 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 COPY --from=build /app/publish .
 
-
 # Expose port 8080 (the default port for .NET 10 container environments)
 EXPOSE 8080
+ENV ASPNETCORE_HTTP_PORTS=8080
+
 ENTRYPOINT ["dotnet", "FinalYearProject.dll"]
