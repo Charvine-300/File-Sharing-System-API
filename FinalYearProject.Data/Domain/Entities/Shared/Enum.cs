@@ -6,12 +6,19 @@ public enum UserType
     SuperAdmin
 }
 
-public enum ComplaintType
+
+public enum AttributeType
 {
-    AssessmentsAndExams = 1,
-    Projects = 2, 
-    Presentations = 3,
-    Other = 4
+    Role,
+    Department,
+    ClearanceLevel,
+    Other
+}
+
+public enum PolicyOperator
+{
+    And,
+    Or
 }
 
 public enum ActionType
@@ -20,21 +27,6 @@ public enum ActionType
     Create = 1,
     Update = 2,
     Delete = 3,
-    Other = 4
+    Authentication = 4,
+    Other = 5
 }
-
-public enum UserStatus
-{
-    Active,
-    Inactive,
-    Suspended,
-    Deleted
-}
-
-public enum AttributeType
-{
-    Role,
-    Department,
-    ClearanceLevel,
-    Other
-}   

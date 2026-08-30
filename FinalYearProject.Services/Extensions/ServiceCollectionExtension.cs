@@ -1,5 +1,16 @@
 ﻿using FinalYearProject.Data.Context;
 using FinalYearProject.Data.Domain.Config;
+using FinalYearProject.Services.AttributeMgmt;
+using FinalYearProject.Services.AuditTrails;
+using FinalYearProject.Services.AuthMgmt;
+using FinalYearProject.Services.Dashboard;
+using FinalYearProject.Services.EmailTransactionsMgmt;
+using FinalYearProject.Services.EmailTransactionsMgmt.Templates.Auth;
+using FinalYearProject.Services.Encryption;
+using FinalYearProject.Services.PolicyMgmt;
+using FinalYearProject.Services.Shared.PolicyAuthorizationService;
+using FinalYearProject.Services.Shared.UserContextService;
+using FinalYearProject.Services.UploadsMgmt;
 using FinalYearProject.Services.UserMgmt;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -24,7 +35,18 @@ public static class ServiceCollectionExtension
         services.AddHttpContextAccessor();
         services.AddHttpClient();
 
+        services.AddScoped<IEncryptionService, EncryptionService>();
         services.AddScoped<IUserMgmtService, UserMgmtService>();
+        services.AddScoped<IAttributeMgmtService, AttributeMgmtService>();
+        services.AddScoped<IUploadsMgmtService, UploadsMgmtService>();
+        services.AddScoped<IPolicyMgmtService, PolicyMgmtService>();
+        services.AddScoped<IUserContextService, UserContextService>();
+        services.AddScoped<IEmailTransactionsMgmtService, EmailTransactionsMgmtService>();
+        services.AddScoped<IAuthEmailTemplates, AuthEmailTemplates>();
+        services.AddScoped<IDashboardService, DashboardService>();
+        services.AddScoped<IAuditLogMgmtService, AuditLogMgmtService>();
+        services.AddScoped<IPolicyAuthorizationService, PolicyAuthorizationService>();
+        services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IMemoryCache, MemoryCache>();
     }
 

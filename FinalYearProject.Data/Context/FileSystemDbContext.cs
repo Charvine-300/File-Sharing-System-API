@@ -1,4 +1,5 @@
-﻿using FinalYearProject.Data.Domain.Config;
+﻿using FinalYearProject.Data.Domain;
+using FinalYearProject.Data.Domain.Config;
 using FinalYearProject.Data.Domain.Entities;
 using FinalYearProject.Data.Domain.Entities.Attributes;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +17,9 @@ public class FileSystemDbContext(DbContextOptions<FileSystemDbContext> options, 
     public DbSet<AuditLog> AuditLogs { get; set; }
     public DbSet<Attribute> Attributes { get; set; }
     public DbSet<UserAttribute> Users_Attributes { get; set; }
+    public DbSet<PolicyAttribute> Policies_Attributes { get; set; }
+    public DbSet<RefreshToken> RefreshTokens { get; set; }
+    public DbSet<PasswordResetOtp> PasswordResetOtps { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

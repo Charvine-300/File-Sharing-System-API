@@ -135,4 +135,35 @@ public class StartsWithAttribute : ValidationAttribute
             return ValidationResult.Success;
         }
     }
+
+    public class ValidAttributeNameAttribute : ValidationAttribute
+    {
+        protected override ValidationResult? IsValid(
+            object? value,
+            ValidationContext validationContext)
+        {
+            if (value == null)
+            {
+                return new ValidationResult(
+                    "Attribute name is required");
+            }
+
+            string attributeName = value.ToString()!;
+
+            // Only allow letters and numbers.
+            // No spaces, symbols, underscores, etc.
+            bool isValid = Regex.IsMatch(
+                attributeName,
+                @"^[A-Za-z][A-Za-z0-9]*$"
+            );
+
+            if (!isValid)
+            {
+                return new ValidationResult(
+                    "Attribute name must be camel-cased and contain only letters and numbers. Example: SoftwareEngineer, DataScientist.");
+            }
+
+            return ValidationResult.Success;
+        }
+    }
 }

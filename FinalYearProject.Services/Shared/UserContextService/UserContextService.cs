@@ -28,7 +28,11 @@ public class UserContextService(IHttpContextAccessor httpContextAccessor): IUser
         )
             ? parsedUserType
             : UserType.Regular;
-        var userId = user.FindFirst("id")?.Value ?? string.Empty;
+        Guid userId = Guid.TryParse(
+            user.FindFirst("id")?.Value,
+            out var parsedUserId)
+                ? parsedUserId
+                : Guid.Empty;
         var firstName = user.FindFirst("firstName")?.Value ?? string.Empty;
         var lastName = user.FindFirst("lastName")?.Value ?? string.Empty;
         var email = user.FindFirst(c => c.Type == ClaimTypes.Email)?.Value ?? string.Empty;
@@ -40,7 +44,7 @@ public class UserContextService(IHttpContextAccessor httpContextAccessor): IUser
 
         // Log missing claims (for debugging)
         if (string.IsNullOrWhiteSpace(email)) Log.Error("Email claim is null.");
-        if (string.IsNullOrWhiteSpace(userId)) Log.Error("UserId claim is null.");
+        if (userId == Guid.Empty) Log.Error("UserId claim is null.");
         //if (string.IsNullOrWhiteSpace(roleId)) Log.Error("RoleId claim is null.");
 
         return new CurrentUser(userType, userId, email, firstName, lastName);

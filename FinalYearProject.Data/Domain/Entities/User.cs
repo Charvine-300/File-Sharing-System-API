@@ -12,9 +12,13 @@ public class User: BaseEntity
     public string Password { get; set; }
     public UserType UserType { get; set; }
     public bool IsActive { get; set; }
+    public string PrivateKey { get; set; }
+    public string? ProfilePhotoPublicId { get; set; }
+    public string? ProfilePhotoUrl { get; set; }
+    public string? PasswordResetOtp { get; set; }
+    public DateTimeOffset? PasswordResetOtpExpiresAt { get; set; }
+    public bool IsPasswordResetOtpVerified { get; set; }
     public virtual ICollection<Upload> Uploads { get; set; } = new List<Upload>();
     public virtual ICollection<UserAttribute> UsersAttributes { get; set; } = new List<UserAttribute>();
-
-    // Confirm and add the column for user's generated private key
-    // TODO: Add M-to-M realationship between User and Attributes
+    public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 }

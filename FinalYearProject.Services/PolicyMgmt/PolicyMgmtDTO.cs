@@ -1,0 +1,33 @@
+﻿using FinalYearProject.Data.Domain.Entities.Shared;
+using FinalYearProject.Data.Utilities;
+using FinalYearProject.Services.UploadsMgmt;
+
+
+namespace FinalYearProject.Services.PolicyMgmt;
+
+public record AllPoliciesResponse(
+    Guid Id,
+    string PolicyName,
+    string PolicyExpression,
+    bool IsSystemPolicy
+);
+
+public record PolicyDetailsResponse(
+    Guid Id,
+    string PolicyName,
+    string PolicyExpression,
+    string Description,
+    bool IsSystemPolicy,
+    List<FileResponse> EncryptedFiles
+);
+
+public class PolicyParameters : RequestParameters
+{
+}
+
+public class UpdatePolicyRequest
+{
+    public string PolicyName { get; set; } = string.Empty;
+
+    public string Description { get; set; } = string.Empty;
+}
