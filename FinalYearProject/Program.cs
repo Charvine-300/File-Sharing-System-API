@@ -1,5 +1,6 @@
 using FinalYearProject.Data.Domain.Config;
 using FinalYearProject.Data.Extensions;
+using Microsoft.Extensions.Configuration.Json;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -7,6 +8,11 @@ using System.Reflection;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Configuration.Sources
+    .OfType<JsonConfigurationSource>()
+    .ToList()
+    .ForEach(source => source.ReloadOnChange = false);
 
 // Services
 FileSystemConfig fileSystemConfig = builder.Services.BindConfiguration(builder.Configuration);
@@ -71,9 +77,9 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.UseHttpsRedirection();
 }
 
-app.UseHttpsRedirection();
 
 
 app.UseCors(options =>
