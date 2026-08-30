@@ -9,7 +9,7 @@ public class RefreshToken
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     [Timestamp]
-    public byte[] TimeStamp { get; set; }
+    public byte[] TimeStamp { get; set; } = [];
     public Guid? UserId { get; set; }
     public virtual User? User { get; set; }
     public string Token { get; set; }
